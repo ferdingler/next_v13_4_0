@@ -115,6 +115,7 @@ process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(nextConfig);
 console.log("Creating http server");
 const server = http.createServer(async (req, res) => {
   try {
+    await waitUntilHandlerIsReady();
     console.log("Handling request");
     await handler(req, res);
   } catch (err) {
@@ -162,3 +163,12 @@ server.listen(currentPort, async (err) => {
     "url: http://" + hostname + ":" + currentPort
   );
 });
+
+async function waitUntilHandlerIsReady() {
+  console.log("Checking if handler is ready");
+  if (!handler) {
+    console.log("Not ready, sleeping");
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await waitUntilHandlerIsReady();
+  }
+}
