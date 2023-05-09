@@ -16,8 +16,6 @@ if (!process.env.NEXT_MANUAL_SIG_HANDLE) {
   process.on("SIGINT", () => process.exit(0));
 }
 
-let handler;
-
 const currentPort = parseInt(process.env.PORT, 10) || 3000;
 const hostname = process.env.HOSTNAME || "localhost";
 const keepAliveTimeout = parseInt(process.env.KEEP_ALIVE_TIMEOUT, 10);
@@ -117,13 +115,12 @@ createServerHandler({
   hostname,
   dir,
   conf: nextConfig,
-}).then((h) => {
-  handler = h;
+}).then((nextHandler) => {
   console.log("Creating http server");
   const server = http.createServer(async (req, res) => {
     try {
       console.log("Handling request");
-      await handler(req, res);
+      await nextHandler(req, res);
     } catch (err) {
       console.error("Failed to call handler", err);
       res.statusCode = 500;
