@@ -112,8 +112,10 @@ const nextConfig = {
 
 process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(nextConfig);
 
+console.log("Creating http server");
 const server = http.createServer(async (req, res) => {
   try {
+    console.log("Handling request");
     await handler(req, res);
   } catch (err) {
     console.error("Failed to call handler", err);
@@ -141,7 +143,6 @@ server.listen(currentPort, async (err) => {
     port: currentPort,
     hostname,
     dir,
-    conf: nextConfig,
   });
 
   try {
