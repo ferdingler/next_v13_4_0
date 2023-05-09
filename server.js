@@ -1,9 +1,8 @@
 const http = require("http");
 const path = require("path");
-// const {
-//   createServerHandler,
-// } = require("next/dist/server/lib/render-server-standalone");
-const NextServer = require("next/dist/server/next-server.js");
+const {
+  createServerHandler,
+} = require("next/dist/server/lib/render-server-standalone");
 
 const dir = path.join(__dirname);
 
@@ -113,71 +112,47 @@ const nextConfig = {
 
 process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(nextConfig);
 
-console.log("Creating http server");
-const server = http.createServer(async (req, res) => {
-  try {
-    // await waitUntilHandlerIsReady();
-    console.log("Handling request");
-    await handler(req, res);
-  } catch (err) {
-    console.error("Failed to call handler", err);
-    res.statusCode = 500;
-    res.end("Internal Server Error");
-  }
-});
-
-if (
-  !Number.isNaN(keepAliveTimeout) &&
-  Number.isFinite(keepAliveTimeout) &&
-  keepAliveTimeout >= 0
-) {
-  console.log("Setting keep alive timeout", keepAliveTimeout);
-  server.keepAliveTimeout = keepAliveTimeout;
-}
-
-server.listen(currentPort, async (err) => {
-  if (err) {
-    console.error("Failed to start server", err);
-    process.exit(1);
-  }
-
-  console.log("Creating server handler", {
-    port: currentPort,
-    hostname,
-    dir,
+createServerHandler({
+  port: currentPort,
+  hostname,
+  dir,
+  conf: nextConfig,
+}).then((h) => {
+  handler = h;
+  console.log("Creating http server");
+  const server = http.createServer(async (req, res) => {
+    try {
+      console.log("Handling request");
+      await handler(req, res);
+    } catch (err) {
+      console.error("Failed to call handler", err);
+      res.statusCode = 500;
+      res.end("Internal Server Error");
+    }
   });
 
-  try {
-    // handler = await createServerHandler({
-    //   port: currentPort,
-    //   hostname,
-    //   dir,
-    //   conf: nextConfig,
-    // });
-    const nextServer = new NextServer({
-      port: currentPort,
-      hostname,
-      dir,
-      conf: nextConfig,
-    });
-
-    handler = nextServer.getRequestHandler();
-  } catch (err) {
-    console.log("Error, failed to create server handler", err);
+  if (
+    !Number.isNaN(keepAliveTimeout) &&
+    Number.isFinite(keepAliveTimeout) &&
+    keepAliveTimeout >= 0
+  ) {
+    console.log("Setting keep alive timeout", keepAliveTimeout);
+    server.keepAliveTimeout = keepAliveTimeout;
   }
 
-  console.log(
-    "Listening on port",
-    currentPort,
-    "url: http://" + hostname + ":" + currentPort
-  );
+  server.listen(currentPort, async (err) => {
+    if (err) {
+      console.error("Failed to start server", err);
+      process.exit(1);
+    }
+
+    console.log(
+      "Listening on port",
+      currentPort,
+      "url: http://" + hostname + ":" + currentPort
+    );
+  });
+}).catch(err => {
+  console.error("Failed to create next server handler", err);
+  process.exit(1);
 });
-
-async function waitUntilHandlerIsReady() {
-  console.log("Checking if handler is ready");
-  if (!handler) {
-    console.log("Not ready, sleeping");
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    await waitUntilHandlerIsReady();
-  }
-}
