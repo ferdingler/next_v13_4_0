@@ -1,8 +1,9 @@
 const http = require("http");
 const path = require("path");
-const {
-  createServerHandler,
-} = require("next/dist/server/lib/render-server-standalone");
+// const {
+//   createServerHandler,
+// } = require("next/dist/server/lib/render-server-standalone");
+const NextServer = require("next/dist/server/next-server.js");
 
 const dir = path.join(__dirname);
 
@@ -115,7 +116,7 @@ process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(nextConfig);
 console.log("Creating http server");
 const server = http.createServer(async (req, res) => {
   try {
-    await waitUntilHandlerIsReady();
+    // await waitUntilHandlerIsReady();
     console.log("Handling request");
     await handler(req, res);
   } catch (err) {
@@ -147,12 +148,20 @@ server.listen(currentPort, async (err) => {
   });
 
   try {
-    handler = await createServerHandler({
+    // handler = await createServerHandler({
+    //   port: currentPort,
+    //   hostname,
+    //   dir,
+    //   conf: nextConfig,
+    // });
+    const nextServer = new NextServer({
       port: currentPort,
       hostname,
       dir,
       conf: nextConfig,
     });
+
+    handler = nextServer.getRequestHandler();
   } catch (err) {
     console.log("Error, failed to create server handler", err);
   }
